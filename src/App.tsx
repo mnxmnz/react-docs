@@ -1,9 +1,8 @@
-import MyApp1 from './03-setup/01-typescript';
-import MyApp2 from './03-setup/02-typescript';
-import MyApp3 from './03-setup/03-usereducer';
-import MyApp4 from './03-setup/04-usecontext';
-import MyApp5 from './03-setup/05-usecontext';
-import MyApp6 from './03-setup/06-usecallback';
+import MyApp1 from './04-describing-the-ui/01-your-first-component/App';
+import MyApp2 from './04-describing-the-ui/02-importing-and-exporting-components/App';
+import MyApp3 from './04-describing-the-ui/03-writing-markup-with-jsx/App';
+import MyApp4 from './04-describing-the-ui/04-javascript-in-jsx-with-curly-braces/App';
+import MyApp5 from './04-describing-the-ui/05-passing-props-to-a-component/App';
 
 function App() {
   return (
@@ -14,7 +13,6 @@ function App() {
       <MyApp3 />
       <MyApp4 />
       <MyApp5 />
-      <MyApp6 />
     </main>
   );
 }
