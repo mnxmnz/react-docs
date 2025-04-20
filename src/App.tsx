@@ -1,8 +1,5 @@
-import MyApp1 from './04-describing-the-ui/01-your-first-component/App';
-import MyApp2 from './04-describing-the-ui/02-importing-and-exporting-components/App';
-import MyApp3 from './04-describing-the-ui/03-writing-markup-with-jsx/App';
-import MyApp4 from './04-describing-the-ui/04-javascript-in-jsx-with-curly-braces/App';
-import MyApp5 from './04-describing-the-ui/05-passing-props-to-a-component/App';
+import MyApp1 from './05-adding-interactivity/01-responding-to-events/App';
+import MyApp2 from './05-adding-interactivity/02-state-a-components-memory/App';
 
 function App() {
   return (
@@ -10,9 +7,6 @@ function App() {
       <h1>React Docs</h1>
       <MyApp1 />
       <MyApp2 />
-      <MyApp3 />
-      <MyApp4 />
-      <MyApp5 />
     </main>
   );
 }
