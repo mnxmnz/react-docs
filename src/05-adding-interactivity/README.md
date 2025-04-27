@@ -117,9 +117,9 @@ export default function Counter() {
 ### 5-3. 업데이트 큐 처리 순서
 
 1. 이벤트 핸들러의 다른 코드가 실행될 때까지 기다린다.
-2. 모든 `state` 업데이터 함수를 큐에 추가한다.
+2. 모든 `state` 업데이트 함수를 큐에 추가한다.
 3. 다음 렌더링에서 큐에 있는 업데이트를 순서대로 처리한다.
-4. 업데이터 함수는 렌더링 중에 실행되며 이전 `state` 값을 기반으로 새로운 `state` 값을 계산한다.
+4. 업데이트 함수는 렌더링 중에 실행되며 이전 `state` 값을 기반으로 새로운 `state` 값을 계산한다.
 
 ```tsx
 import { useState } from 'react';
@@ -152,5 +152,78 @@ export default function Counter() {
 
 ### 5-4. 명명 규칙
 
-- 업데이터 함수의 인수는 해당 `state` 변수의 첫 글자를 사용하는 것이 일반적이다.
+- 업데이트 함수의 인수는 해당 `state` 변수의 첫 글자를 사용하는 것이 일반적이다.
 - 더 명확한 코드를 위해 전체 `state` 변수명을 사용하거나 `prev` 접두사를 사용할 수도 있다.
+
+## 6. 객체 State 업데이트하기
+
+### 6-1. 변경과 불변성
+
+- `state` 객체는 불변성을 가진 것처럼 다루어야 한다.
+- 객체를 직접 변경하는 대신 새로운 객체를 생성하여 교체해야 한다.
+- `state` 값에 저장된 모든 자바스크립트 객체는 읽기 전용처럼 다루어야 한다.
+
+#### 6-1-1. 지역 변경
+
+- 새로운 객체를 변경하는 것은 괜찮다.
+- 다른 코드가 아직 해당 객체를 참조하지 않기 때문이다.
+- 렌더링 중에도 지역 변경을 할 수 있다.
+
+```tsx
+// 문제가 되는 코드
+position.x = e.clientX; // state 객체 직접 변경
+
+// 괜찮은 코드
+const nextPosition = {}; // 새로운 객체 생성
+nextPosition.x = e.clientX;
+nextPosition.y = e.clientY;
+setPosition(nextPosition);
+
+// 더 간단한 코드
+setPosition({
+  x: e.clientX,
+  y: e.clientY,
+});
+```
+
+### 6-2. 객체 복사 방법
+
+```tsx
+// 전개 구문 사용
+setPerson({
+  ...person,
+  firstName: e.target.value,
+});
+
+// 중첩된 객체 업데이트
+setPerson({
+  ...person,
+  artwork: {
+    ...person.artwork,
+    title: e.target.value,
+  },
+});
+```
+
+### 6-3. Immer 사용
+
+```tsx
+const [person, updatePerson] = useImmer({
+  name: 'Niki de Saint Phalle',
+});
+
+function handleNameChange(e: React.ChangeEvent<HTMLInputElement>) {
+  updatePerson(draft => {
+    draft.name = e.target.value;
+  });
+}
+```
+
+- [Immer](https://github.com/immerjs/use-immer) 를 사용하면 객체의 불변성을 유지하면서도 객체를 변경하는 것처럼 코드를 작성할 수 있다.
+
+### 6-4. 불변성을 지켜야 하는 이유
+
+- 디버깅 용이성: state 변경 이력을 명확하게 추적할 수 있음
+- 최적화: 이전 props/state 비교가 빠름
+- 새로운 기능 사용: 새로운 React 기능은 불변성을 기반으로 설계됨
+- 구현 단순화: 객체에 대한 특별한 처리가 필요 없음
