@@ -73,3 +73,84 @@ function useState(initialState) {
   return pair;
 }
 ```
+
+## 3. 렌더링 그리고 커밋
+
+## 4. 스냅샷으로서의 State
+
+## 5. State 업데이트 큐
+
+### 5-1. Batching
+
+- 이벤트 핸들러의 모든 코드가 실행될 때까지 기다린 후 `state` 값을 업데이트한다.
+- 불필요한 리렌더링을 방지하고 성능을 최적화할 수 있다.
+- 이벤트 핸들러와 그 안에 있는 코드가 완료될 때까지 UI 업데이트를 하지 않는다는 의미이기도 하다.
+
+### 5-2. 동일한 state 변수의 연속 업데이트
+
+```tsx
+import { useState } from 'react';
+
+export default function Counter() {
+  const [number, setNumber] = useState(0);
+
+  return (
+    <>
+      <h1>{number}</h1>
+      <button
+        onClick={() => {
+          setNumber(n => n + 1);
+          setNumber(n => n + 1);
+          setNumber(n => n + 1);
+        }}
+      >
+        +3
+      </button>
+    </>
+  );
+}
+```
+
+- 다음 렌더링 전에 같은 `state` 변수를 여러 번 업데이트하려면 업데이터 함수(`n => n + 1`)를 사용한다.
+- `setNumber(n => n + 1)` 같이 이전 `state` 기반으로 다음 `state` 값을 계산하는 함수를 전달한다.
+
+### 5-3. 업데이트 큐 처리 순서
+
+1. 이벤트 핸들러의 다른 코드가 실행될 때까지 기다린다.
+2. 모든 `state` 업데이터 함수를 큐에 추가한다.
+3. 다음 렌더링에서 큐에 있는 업데이트를 순서대로 처리한다.
+4. 업데이터 함수는 렌더링 중에 실행되며 이전 `state` 값을 기반으로 새로운 `state` 값을 계산한다.
+
+```tsx
+import { useState } from 'react';
+
+export default function Counter() {
+  const [number, setNumber] = useState(0);
+
+  return (
+    <>
+      <h1>{number}</h1>
+      <button
+        onClick={() => {
+          setNumber(number + 5);
+          setNumber(n => n + 1);
+          setNumber(42);
+        }}
+      >
+        Increase the number
+      </button>
+    </>
+  );
+}
+```
+
+| queued update     | n          | returns   |
+| ----------------- | ---------- | --------- |
+| "replace with 5"  | 0 (unused) | 5         |
+| n => n + 1        | 5          | 5 + 1 = 6 |
+| "replace with 42" | 6 (unused) | 42        |
+
+### 5-4. 명명 규칙
+
+- 업데이터 함수의 인수는 해당 `state` 변수의 첫 글자를 사용하는 것이 일반적이다.
+- 더 명확한 코드를 위해 전체 `state` 변수명을 사용하거나 `prev` 접두사를 사용할 수도 있다.
