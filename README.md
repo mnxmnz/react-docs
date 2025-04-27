@@ -19,3 +19,8 @@
 
 - [공식 문서](https://ko.react.dev/learn/describing-the-ui)
 - [예제 코드](./src/04-describing-the-ui)
+
+## 5. Adding Interactivity
+
+- [공식 문서](https://ko.react.dev/learn/adding-interactivity)
+- [예제 코드](./src/05-adding-interactivity)

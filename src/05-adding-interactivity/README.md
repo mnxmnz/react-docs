@@ -227,3 +227,52 @@ function handleNameChange(e: React.ChangeEvent<HTMLInputElement>) {
 - 최적화: 이전 props/state 비교가 빠름
 - 새로운 기능 사용: 새로운 React 기능은 불변성을 기반으로 설계됨
 - 구현 단순화: 객체에 대한 특별한 처리가 필요 없음
+
+## 7. 배열 State 업데이트하기
+
+### 7-1. 배열 변경 금지
+
+- `push()`, `pop()`, `splice()` 등의 변경 메서드 사용 금지
+- `filter()`, `map()` 등의 불변 메서드 사용
+
+### 7-2. 배열 연산 참조표
+
+| 비선호 (변경)              | 선호 (새 배열 반환)          |
+| -------------------------- | ---------------------------- |
+| 추가: push, unshift        | concat, [...arr] 전개 연산자 |
+| 제거: pop, shift, splice   | filter, slice                |
+| 교체: splice, arr[i] = ... | map                          |
+| 정렬: reverse, sort        | 배열 복사 후 처리            |
+
+### 7-3. 배열 업데이트 예시
+
+```tsx
+// 배열에 항목 추가
+setArtists([...artists, { id: nextId++, name: name }]);
+
+// 배열에서 항목 제거
+setArtists(artists.filter(a => a.id !== artistId));
+
+// 배열 항목 교체
+setArtists(
+  artists.map(artist => {
+    if (artist.id === artistId) {
+      return { ...artist, name: newName };
+    } else {
+      return artist;
+    }
+  }),
+);
+```
+
+### 7-4. Immer 사용
+
+- [Immer](https://github.com/immerjs/use-immer) 를 사용하면 변경 문법을 사용하면서도 불변성을 유지할 수 있음
+- 복잡한 중첩 배열 업데이트를 간결하게 작성 가능
+
+```tsx
+updateArtists(draft => {
+  const artwork = draft.find(a => a.id === artworkId);
+  artwork.seen = nextSeen;
+});
+```
