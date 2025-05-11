@@ -122,6 +122,7 @@ const [status, setStatus] = useState('typing'); // 'typing' | 'submitting' | 'su
 ```tsx
 function Message({ initialColor }) {
   const [color, setColor] = useState(initialColor);
+}
 ```
 
 ### 2-2. State 구조화 예시
@@ -141,4 +142,39 @@ const [position, setPosition] = useState({ x: 0, y: 0 });
 - 중첩된 객체 업데이트 시 불변성 유지
 - 배열 state 업데이트 시 적절한 배열 메서드 사용
 
-## 4. 컴포넌트 간 State 공유하기
+## 3. 컴포넌트 간 State 공유하기
+
+### 3-1. State 끌어올리기
+
+- 두 컴포넌트의 state 가 항상 함께 변경되어야 할 때 사용
+- 각 컴포넌트에서 state 를 제거하고 가장 가까운 공통 부모 컴포넌트로 이동
+- props 를 통해 자식 컴포넌트에 state 전달
+
+### 3-2. 제어 컴포넌트와 비제어 컴포넌트
+
+#### 제어 컴포넌트
+
+- 컴포넌트의 중요한 정보가 props 에 의해 제어됨
+- 부모 컴포넌트가 동작을 지정할 수 있음
+- 더 유연하지만 부모 컴포넌트에서 props 설정 필요
+
+#### 비제어 컴포넌트
+
+- 자체 지역 state 가짐
+- 설정이 적어 부모 컴포넌트에서 사용하기 쉬움
+- 여러 컴포넌트를 함께 조정할 때 덜 유연함
+
+### 3-3. State 구조화 원칙
+
+#### 단일 진리의 원천 (Single Source of Truth)
+
+- 각 고유한 state 에 대해 "소유"할 컴포넌트 선택
+- 모든 state 가 한 곳에 존재한다는 의미가 아님
+- 공유된 state 를 중복하지 않고 공통 부모로 끌어올림
+- 필요한 자식에게 props 로 전달
+
+#### State 위치 결정
+
+- 입력과 같은 리프 컴포넌트에 가까운 state
+- 앱 상단에 더 가까운 state
+- 애플리케이션의 변화에 따라 state 위치 조정 가능

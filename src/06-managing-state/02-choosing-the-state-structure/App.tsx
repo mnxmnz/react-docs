@@ -1,6 +1,7 @@
 import Menu from './Menu';
-import TravelPlan from './TravelPlan';
-import MailClient from './MailClient';
+import TravelPlan from './travel/TravelPlan';
+import MailClient from './mail/MailClient';
+
 export default function App() {
   return (
     <>
