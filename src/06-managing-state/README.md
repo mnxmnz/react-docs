@@ -86,4 +86,59 @@ const [status, setStatus] = useState('typing'); // 'typing' | 'submitting' | 'su
 
 ## 2. State 구조 선택하기
 
+### 2-1. State 구조화 원칙
+
+#### 연관된 state 그룹화하기
+
+- 항상 함께 업데이트되는 state 는 하나로 통합
+- x, y 좌표는 `position` 객체로 통합
+
+#### State 모순 피하기
+
+- 여러 state 조각이 서로 모순되는 구조 피하기
+- 불가능한 state 조합 방지
+
+#### 불필요한 state 피하기
+
+- props 나 기존 state 에서 계산 가능한 정보는 state 로 저장하지 않기
+- 파생된 정보는 필요할 때 계산
+
+#### State 중복 피하기
+
+- 동일한 데이터가 여러 곳에 중복되면 동기화 유지가 어려움
+- 중복 데이터 제거로 버그 가능성 감소
+
+#### 깊게 중첩된 state 피하기
+
+- 깊은 계층 구조는 업데이트가 복잡함
+- 가능한 평탄한 구조로 설계
+
+#### Props를 state에 미러링하지 않기
+
+- props 를 state 로 복사하면 불필요한 중복 발생
+- props 가 변경되어도 state 는 자동으로 업데이트되지 않음
+- props 를 직접 사용하거나 필요한 경우에만 state 로 변환
+
+```tsx
+function Message({ initialColor }) {
+  const [color, setColor] = useState(initialColor);
+```
+
+### 2-2. State 구조화 예시
+
+```tsx
+// 연관된 state 분리
+const [x, setX] = useState(0);
+const [y, setY] = useState(0);
+
+// 연관된 state 통합
+const [position, setPosition] = useState({ x: 0, y: 0 });
+```
+
+### 2-3. State 업데이트 시 주의사항
+
+- 객체 state 업데이트 시 스프레드 연산자 사용
+- 중첩된 객체 업데이트 시 불변성 유지
+- 배열 state 업데이트 시 적절한 배열 메서드 사용
+
 ## 4. 컴포넌트 간 State 공유하기
