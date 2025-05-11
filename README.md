@@ -24,3 +24,8 @@
 
 - [공식 문서](https://ko.react.dev/learn/adding-interactivity)
 - [예제 코드](./src/05-adding-interactivity)
+
+## 6. Managing State
+
+- [공식 문서](https://ko.react.dev/learn/managing-state)
+- [예제 코드](./src/06-managing-state)

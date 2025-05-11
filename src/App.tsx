@@ -1,4 +1,4 @@
-import MyApp from './05-adding-interactivity/07-updating-arrays-in-state/App';
+import MyApp from './06-managing-state/01-reacting-to-input-with-state/App';
 
 function App() {
   return (
