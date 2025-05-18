@@ -215,6 +215,7 @@ function Counter({ isFancy }) {
   const [hover, setHover] = useState(false);
 
   let className = 'counter';
+
   if (hover) {
     className += ' hover';
   }
@@ -305,3 +306,192 @@ export default function MyComponent() {
 - 컴포넌트 초기화 시 저장된 데이터 활용
 
 > 어떤 방법을 선택하더라도 각 채팅은 개념적으로 구분되므로 현재 수신자를 기반으로 `<Chat>` 컴포넌트에 `key` 를 부여하는 것이 적절
+
+## 5. State 로직을 reducer로 작성하기
+
+### 5-1. Reducer란?
+
+- 컴포넌트의 state 업데이트 로직을 컴포넌트 외부의 단일 함수로 통합
+- 여러 이벤트 핸들러에 분산된 state 업데이트 로직을 관리하기 쉽게 만들 수 있음
+- `useState`에서 `useReducer`로 리팩토링 가능
+
+#### Reducer 이름의 유래
+
+- JavaScript 의 `reduce()` 배열 메서드에서 유래
+- `reduce()` 는 배열의 여러 값을 하나의 값으로 누적하는 것처럼 Reducer 도 여러 state 업데이트를 하나의 state 로 누적하는 역할 수행
+- 이전 state 와 action 을 받아 다음 state 를 반환하는 순수 함수
+
+### 5-2. useState에서 useReducer로 변환하기
+
+#### 1. State 설정에서 Action 전달로 변경
+
+```tsx
+// 직접 state 설정
+function handleAddTask(text) {
+  setTasks([
+    ...tasks,
+    {
+      id: nextId++,
+      text: text,
+      done: false,
+    },
+  ]);
+}
+```
+
+```tsx
+// action 전달
+function handleAddTask(text) {
+  dispatch({
+    type: 'added',
+    id: nextId++,
+    text: text,
+  });
+}
+```
+
+#### 2. Reducer 함수 작성
+
+```tsx
+function tasksReducer(tasks, action) {
+  switch (action.type) {
+    case 'added': {
+      return [
+        ...tasks,
+        {
+          id: action.id,
+          text: action.text,
+          done: false,
+        },
+      ];
+    }
+    case 'changed': {
+      return tasks.map(t => {
+        if (t.id === action.task.id) {
+          return action.task;
+        }
+
+        return t;
+      });
+    }
+    case 'deleted': {
+      return tasks.filter(t => t.id !== action.id);
+    }
+    default: {
+      throw Error('Unknown action: ' + action.type);
+    }
+  }
+}
+```
+
+#### 컴포넌트에서 reducer 사용
+
+```tsx
+const [tasks, dispatch] = useReducer(tasksReducer, initialTasks);
+```
+
+### 5-3. useState와 useReducer 비교하기
+
+#### useState
+
+- 간단한 state 관리에 적합
+- 독립적인 state 값들을 다룰 때 유용
+- 코드가 간결하고 직관적
+- 디버깅이 상대적으로 어려울 수 있음
+
+#### useReducer
+
+- 복잡한 state 로직에 적합
+- 여러 state 값들이 함께 업데이트될 때 유용
+- 디버깅과 테스트가 용이
+- 코드가 조금 더 길어질 수 있음
+
+#### 선택 기준
+
+- state 업데이트 로직이 복잡할 때
+- 여러 state 를 함께 업데이트할 때
+- 디버깅이 중요할 때
+- 테스트가 필요할 때
+
+### 5-4. Reducer 작성 시 주의사항
+
+#### Reducer는 순수해야 함
+
+- 렌더링 중에 실행되므로 순수 함수여야 함
+- 입력이 같으면 항상 같은 결과를 반환해야 함
+- 사이드 이펙트를 수행하면 안 됨
+- 객체와 배열을 변경하지 않고 업데이트해야 함
+
+#### Action 설계 원칙
+
+- 각 action 은 하나의 사용자 상호작용을 설명해야 함
+- 여러 필드가 있는 경우 개별 action 보다 하나의 action 으로 통합
+- 디버깅을 위해 action 로그가 명확해야 함
+
+### 5-5. Immer로 간결한 Reducer 작성하기
+
+- Immer 라이브러리를 사용하여 reducer 를 더 간결하게 작성할 수 있음
+- `useImmerReducer` 를 사용하면 state 를 직접 변경하는 것처럼 작성할 수 있음
+- 내부적으로 Immer 가 변경 사항이 반영된 복사본을 생성
+
+```tsx
+import { useImmerReducer } from 'use-immer';
+
+function tasksReducer(draft, action) {
+  switch (action.type) {
+    case 'added': {
+      draft.push({
+        id: action.id,
+        text: action.text,
+        done: false,
+      });
+      break;
+    }
+    case 'changed': {
+      const index = draft.findIndex(t => t.id === action.task.id);
+      draft[index] = action.task;
+      break;
+    }
+    case 'deleted': {
+      return draft.filter(t => t.id !== action.id);
+    }
+    default: {
+      throw Error('Unknown action: ' + action.type);
+    }
+  }
+}
+
+export default function TaskApp() {
+  const [tasks, dispatch] = useImmerReducer(tasksReducer, initialTasks);
+
+  function handleAddTask(text) {
+    dispatch({
+      type: 'added',
+      id: nextId++,
+      text: text,
+    });
+  }
+
+  function handleChangeTask(task) {
+    dispatch({
+      type: 'changed',
+      task: task,
+    });
+  }
+
+  function handleDeleteTask(taskId) {
+    dispatch({
+      type: 'deleted',
+      id: taskId,
+    });
+  }
+
+  return (
+    <>
+      <h1>Prague itinerary</h1>
+      <AddTask onAddTask={handleAddTask} />
+      <TaskList tasks={tasks} onChangeTask={handleChangeTask} onDeleteTask={handleDeleteTask} />
+    </>
+  );
+}
+```
