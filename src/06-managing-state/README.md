@@ -178,3 +178,130 @@ const [position, setPosition] = useState({ x: 0, y: 0 });
 - 입력과 같은 리프 컴포넌트에 가까운 state
 - 앱 상단에 더 가까운 state
 - 애플리케이션의 변화에 따라 state 위치 조정 가능
+
+## 4. State를 보존하고 초기화하기
+
+### 4-1. State와 렌더 트리의 관계
+
+#### State는 렌더 트리의 위치에 연결됨
+
+- React 는 UI 트리에서의 위치를 통해 각 state 가 어떤 컴포넌트에 속하는지 추적
+- 컴포넌트가 UI 트리에서 같은 위치에 있으면 state 보존
+- 컴포넌트가 UI 트리에서 제거되면 state 도 함께 제거
+
+### 4-2. State 보존과 초기화
+
+#### 같은 위치의 같은 컴포넌트는 state 보존
+
+```jsx
+import { useState } from 'react';
+
+export default function App() {
+  const [isFancy, setIsFancy] = useState(false);
+
+  return (
+    <div>
+      {isFancy ? <Counter isFancy={true} /> : <Counter isFancy={false} />}
+      <label>
+        <input type="checkbox" checked={isFancy} onChange={e => setIsFancy(e.target.checked)} />
+        Use fancy styling
+      </label>
+    </div>
+  );
+}
+
+function Counter({ isFancy }) {
+  const [score, setScore] = useState(0);
+  const [hover, setHover] = useState(false);
+
+  let className = 'counter';
+  if (hover) {
+    className += ' hover';
+  }
+  if (isFancy) {
+    className += ' fancy';
+  }
+
+  return (
+    <div className={className} onPointerEnter={() => setHover(true)} onPointerLeave={() => setHover(false)}>
+      <h1>{score}</h1>
+      <button onClick={() => setScore(score + 1)}>Add one</button>
+    </div>
+  );
+}
+```
+
+![preserving_state_same_component](./images/preserving_state_same_component.webp)
+
+- 동일한 컴포넌트가 같은 위치에 렌더링되면 state 유지
+- 컴포넌트의 state 는 JSX 태그에 저장되지 않고 트리 위치와 연관됨
+
+#### 같은 위치의 다른 컴포넌트는 state 초기화
+
+- 다른 컴포넌트로 교체되면 state 초기화
+- 컴포넌트의 타입이 변경되면 state 초기화
+
+### 4-3. State 초기화 방법
+
+#### 1. 다른 위치에 컴포넌트 렌더링
+
+- 조건부 렌더링으로 컴포넌트를 다른 위치에 배치
+- 각 위치는 독립적인 state 를 가짐
+
+#### 2. key 를 이용한 state 초기화
+
+- key 를 명시하면 React 는 부모 내에서의 순서 대신에 key 자체를 위치의 일부로 사용
+- 컴포넌트에 다른 key 를 부여하여 state 초기화
+- key 가 변경되면 React 는 컴포넌트를 새로 생성
+- 폼 초기화나 리스트 아이템 업데이트에 유용
+
+### 4-4. 주의사항
+
+```jsx
+import { useState } from 'react';
+
+export default function MyComponent() {
+  const [counter, setCounter] = useState(0);
+
+  // MyComponent 를 렌더링할 때마다 다른 MyTextField 함수 생성
+  function MyTextField() {
+    const [text, setText] = useState('');
+
+    return <input value={text} onChange={e => setText(e.target.value)} />;
+  }
+
+  return (
+    <>
+      <MyTextField />
+      {/* 버튼(counter)을 클릭하면 입력한 값(text) 초기화 */}
+      <button onClick={() => setCounter(counter + 1)}>Clicked {counter} times</button>
+    </>
+  );
+}
+```
+
+- 중첩해서 컴포넌트를 정의하면 의도치 않게 state 가 초기화될 수 있음
+- 컴포넌트를 함수 내부에서 정의하지 않기
+- 컴포넌트를 최상위 레벨에서 정의하기
+
+### 4-5. 제거된 컴포넌트의 State 보존하기
+
+#### 1. 모든 컴포넌트를 렌더링하고 CSS로 숨기기
+
+- 모든 채팅을 렌더링하고 CSS 로 숨김 처리
+- 컴포넌트가 트리에서 제거되지 않아 state 유지
+- 간단한 UI 에서 효과적이나 숨겨진 트리가 크면 성능 저하 가능성 높음
+
+#### 2. State를 상위로 끌어올리기
+
+- 각 수신자의 임시 메시지를 부모 컴포넌트에서 관리
+- 자식 컴포넌트가 제거되어도 state 유지 가능
+- 가장 일반적으로 사용되는 해결책
+
+#### 3. 외부 저장소 활용하기
+
+- localStorage 와 같은 외부 저장소 사용
+- 페이지를 닫아도 state 유지 가능
+- 컴포넌트 초기화 시 저장된 데이터 활용
+
+> 어떤 방법을 선택하더라도 각 채팅은 개념적으로 구분되므로 현재 수신자를 기반으로 `<Chat>` 컴포넌트에 `key` 를 부여하는 것이 적절
