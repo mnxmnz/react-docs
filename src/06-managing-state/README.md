@@ -495,3 +495,231 @@ export default function TaskApp() {
   );
 }
 ```
+
+## 6. Context를 사용해 데이터를 깊게 전달하기
+
+### 6-1. Props 전달의 문제점
+
+#### Prop Drilling
+
+- 여러 컴포넌트를 거쳐 props 전달
+- 중간 컴포넌트가 해당 데이터를 사용하지 않아도 전달
+- 유지보수가 어려움
+
+### 6-2. Context의 기본 개념
+
+#### Context란?
+
+- 컴포넌트 트리를 통해 데이터를 전달하는 방법
+- props drilling 없이 깊은 곳에 있는 컴포넌트에 데이터 전달 가능
+- React 내장 기능으로 별도의 라이브러리 불필요
+
+### 6-3. Context 사용 방법
+
+#### 1. Context 생성하기
+
+```tsx
+import { createContext } from 'react';
+
+export const LevelContext = createContext(1);
+```
+
+#### 2. Context Provider로 감싸기
+
+```tsx
+import { LevelContext } from './LevelContext.js';
+
+export default function Section({ level, children }) {
+  return <LevelContext.Provider value={level}>{children}</LevelContext.Provider>;
+}
+```
+
+#### 3. Context 사용하기
+
+```tsx
+import { useContext } from 'react';
+import { LevelContext } from './LevelContext.js';
+
+export default function Heading({ children }) {
+  const level = useContext(LevelContext);
+}
+```
+
+### 6-4. Context 사용 시 주의사항
+
+#### Context 사용 전 고려사항
+
+> **props 전달이 간단한 경우**
+
+- 몇 개의 props 만 전달하는 경우는 Context 불필요
+- 일반적인 props 전달 방식 사용 권장
+
+> **컴포넌트 추출과 children 사용**
+
+- 중간 컴포넌트들을 추출하여 children 으로 전달
+- 데이터를 사용하는 컴포넌트와 전달하는 컴포넌트 사이의 계층 줄이기
+
+### 6-5. Context의 일반적인 사용 사례
+
+#### 1. 테마 지정
+
+- 다크 모드/라이트 모드 전환
+- 앱 전체의 시각적 스타일 관리
+
+#### 2. 현재 계정
+
+- 로그인한 사용자 정보 관리
+- 여러 계정 동시 운영 시 활용
+
+#### 3. 라우팅
+
+- 현재 경로 정보 관리
+- 링크 활성화 상태 관리
+
+#### 4. 상태 관리
+
+- 앱 전반에 걸친 상태 관리
+- Reducer 와 함께 사용하여 복잡한 상태 관리
+
+### 6-6. Context와 State 조합
+
+- Context 는 정적인 값으로 제한되지 않음
+- Provider 의 value prop 을 state 로 관리할 수 있음
+- state 변경 시 하위 컴포넌트들이 자동으로 업데이트
+
+```tsx
+function App() {
+  const [theme, setTheme] = useState('light');
+
+  return (
+    <ThemeContext.Provider value={theme}>
+      <Page />
+    </ThemeContext.Provider>
+  );
+}
+```
+
+## 7. Reducer와 Context로 앱 확장하기
+
+### 7-1. Reducer와 Context 결합의 필요성
+
+#### 기존 방식의 한계
+
+- Reducer 로 state 업데이트 로직을 통합할 수 있지만 앱이 커지면 다른 문제 발생
+- State 와 dispatch 함수가 최상위 컴포넌트에서만 사용 가능
+- 하위 컴포넌트에서 사용하려면 props 로 전달해야 함
+- 수백 개의 컴포넌트를 거쳐 전달하는 것은 비효율적
+
+### 7-2. Reducer와 Context 결합 방법
+
+#### 1. Context 생성하기
+
+```tsx
+import { createContext } from 'react';
+
+export const TasksContext = createContext(null);
+export const TasksDispatchContext = createContext(null);
+```
+
+#### 2. Provider 컴포넌트 생성
+
+```tsx
+export function TasksProvider({ children }) {
+  const [tasks, dispatch] = useReducer(tasksReducer, initialTasks);
+
+  return (
+    <TasksContext.Provider value={tasks}>
+      <TasksDispatchContext.Provider value={dispatch}>{children}</TasksDispatchContext.Provider>
+    </TasksContext.Provider>
+  );
+}
+```
+
+#### 3. Custom Hook 생성
+
+```tsx
+export function useTasks() {
+  return useContext(TasksContext);
+}
+
+export function useTasksDispatch() {
+  return useContext(TasksDispatchContext);
+}
+```
+
+### 7-3. 컴포넌트에서 사용하기
+
+#### Provider로 감싸기
+
+```tsx
+function TaskApp() {
+  return (
+    <TasksProvider>
+      <h1>Day off in Kyoto</h1>
+      <AddTask />
+      <TaskList />
+    </TasksProvider>
+  );
+}
+```
+
+#### Context 사용하기
+
+```tsx
+function TaskList() {
+  const tasks = useTasks();
+  return (
+    <ul>
+      {tasks.map(task => (
+        <li key={task.id}>
+          <Task task={task} />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function Task({ task }) {
+  const dispatch = useTasksDispatch();
+}
+```
+
+### 7-4. 장점
+
+#### 1. 코드 구조화
+
+- State 로직과 UI 로직 분리
+- 컴포넌트는 데이터를 어디서 가져오는지가 아닌 무엇을 보여줄지에 집중
+- Context 와 reducer 를 별도 파일로 분리하여 관리 용이
+
+#### 2. 재사용성
+
+- Custom Hook 을 통해 context 사용 단순화
+- 여러 컴포넌트에서 동일한 로직 재사용 가능
+- 앱의 다른 부분에서도 동일한 패턴 적용 가능
+
+#### 3. 확장성
+
+- 앱이 커질수록 context-reducer 조합을 여러 개 만들 수 있음
+- 각 기능별로 독립적인 state 관리 가능
+- 트리 아래의 모든 컴포넌트에서 데이터 접근 용이
+
+### 7-5. 주의사항
+
+#### 1. Context 분리
+
+- State 와 dispatch 함수를 위한 별도의 context 생성
+- 각각의 책임을 명확히 분리하여 관리
+
+#### 2. Custom Hook 활용
+
+- Context 사용을 단순화하기 위한 Custom Hook 생성
+- Hook 이름은 `use` 로 시작하는 것이 관례
+- 다른 Hook 들도 Custom Hook 내에서 사용 가능
+
+#### 3. Provider 구조
+
+- Provider 컴포넌트를 통해 모든 것을 하나로 묶기
+- children을 prop 으로 받아 JSX 전달 가능
+- 중첩된 Provider 구조로 여러 context 관리 가능
+https://www.linkedin.com/feed/update/urn:li:activity:7282984692906106880?commentUrn=urn%3Ali%3Acomment%3A%28activity%3A7282984692906106880%2C7283012502316032000%29&dashCommentUrn=urn%3Ali%3Afsd_comment%3A%287283012502316032000%2Curn%3Ali%3Aactivity%3A7282984692906106880%29
