@@ -29,3 +29,8 @@
 
 - [공식 문서](https://ko.react.dev/learn/managing-state)
 - [예제 코드](./src/06-managing-state)
+
+## 7. Escape Hatches
+
+- [공식 문서](https://ko.react.dev/learn/escape-hatches)
+- [예제 코드](./src/07-escape-hatches)
