@@ -342,3 +342,125 @@ function handleClick() {
 - DOM 조작이 불가피한 경우에만 사용
 - 가능한 React의 state와 props로 해결
 - 서드파티 DOM 라이브러리와의 통합 시 활용
+
+## 3. Effect로 동기화하기
+
+### 3-1. Effect의 기본 개념
+
+#### Effect란?
+
+- 컴포넌트를 외부 시스템과 동기화할 때 사용
+- 렌더링 후 코드를 실행하여 React 외부 시스템과 컴포넌트를 동기화
+- 이벤트가 아닌 렌더링에 의해 직접 발생하는 부수 효과 처리
+
+### 3-2. Effect와 이벤트의 차이점
+
+#### Effect
+
+- 렌더링 자체에 의해 발생하는 부수 효과
+- 특정 상호작용과 무관하게 발생
+- 컴포넌트가 화면에 표시될 때 실행
+
+#### 이벤트
+
+- 특정 사용자 상호작용에 의해 발생
+- 버튼 클릭이나 입력 등의 사용자 액션에 반응
+- 명시적인 트리거가 있는 경우 사용
+
+### 3-3. Effect 사용 시기
+
+#### Effect를 사용해야 하는 경우
+
+- 외부 시스템과 동기화
+- 서버 연결 설정
+- 분석 목적의 로그 전송
+- DOM 수동 변경
+- 애니메이션 트리거
+- 데이터 페칭
+
+### 3-4. Effect 작성 방법
+
+#### 1. Effect 선언하기
+
+```tsx
+import { useEffect } from 'react';
+
+function MyComponent() {
+  useEffect(() => {
+    // Effect 코드
+  });
+}
+```
+
+#### 2. Effect의 의존성 지정하기
+
+```tsx
+useEffect(() => {
+  // Effect 코드
+}, [dependency1, dependency2]);
+```
+
+#### 3. Ref 와 의존성 배열
+
+- ref 객체는 React 에 의해 안정적인 객체로 보장됨
+- ref 객체의 `current` 속성은 변경되어도 ref 객체 자체는 동일한 참조 유지
+- 따라서 ref 를 의존성 배열에 포함할 필요가 없음
+- ref 객체는 렌더링 간에 일관된 참조를 유지하므로 Effect 의 재실행을 트리거하지 않음
+
+#### 4. 클린업 추가하기
+
+```tsx
+useEffect(() => {
+  // Effect 코드
+
+  return () => {
+    // 클린업 코드
+  };
+}, []);
+```
+
+### 3-5. Effect 사용 시 주의사항
+
+#### 1. 불필요한 Effect 피하기
+
+- 렌더링을 위한 데이터 변환
+- 사용자 이벤트 핸들러
+- 애플리케이션 초기화
+- 제품 구매 로직
+
+#### 2. Effect 의존성 관리
+
+- Effect 내부에서 사용되는 모든 반응형 값은 의존성 배열에 포함
+- 빈 의존성 배열(`[]`)은 컴포넌트 마운트 시에만 실행
+- 의존성 배열은 Effect 내부의 코드에 의해 결정
+
+#### 3. 개발 환경에서의 동작
+
+- Strict Mode 에서는 컴포넌트를 두 번 마운트함
+- 개발 환경에서만 적용하는 동작
+- Effect 의 스트레스 테스트를 위한 것
+
+### 3-6. Effect 사용 예시
+
+#### 채팅 서버 연결 예제
+
+```tsx
+function ChatRoom({ roomId }) {
+  useEffect(() => {
+    const connection = createConnection(roomId);
+    connection.connect();
+
+    return () => {
+      connection.disconnect();
+    };
+  }, [roomId]);
+}
+```
+
+### 3-7. Effect와 렌더링의 관계
+
+- 각 렌더링은 고유한 Effect 를 가짐
+- Effect 는 렌더링 시점의 props 와 state 값을 보관함
+- Effect 내부의 코드는 렌더링이 발생한 시점의 값을 참조
+- 클린업 함수도 해당 렌더링의 props 와 state 값을 참조
+- React 는 다음 Effect를 실행하기 전에 이전 Effect 의 클린업을 실행
