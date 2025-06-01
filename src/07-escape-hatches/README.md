@@ -464,3 +464,264 @@ function ChatRoom({ roomId }) {
 - Effect 내부의 코드는 렌더링이 발생한 시점의 값을 참조
 - 클린업 함수도 해당 렌더링의 props 와 state 값을 참조
 - React 는 다음 Effect를 실행하기 전에 이전 Effect 의 클린업을 실행
+
+## 4. Effect가 필요하지 않은 경우
+
+### 4-1. Effect가 필요하지 않은 상황
+
+#### Effect가 불필요한 경우
+
+- 렌더링을 위한 데이터 변환
+- 사용자 이벤트 처리
+- 애플리케이션 초기화
+- 제품 구매 로직
+
+#### Effect가 필요한 경우
+
+- 외부 시스템과의 동기화
+- 서버 연결 설정
+- 분석 목적의 로그 전송
+- DOM 수동 변경
+- 애니메이션 트리거
+- 데이터 페칭
+
+### 4-2. 데이터 변환
+
+#### 렌더링 중 데이터 변환 (권장)
+
+```tsx
+function TodoList({ todos, filter }) {
+  const visibleTodos = todos.filter(todo => {
+    if (filter === 'active') return !todo.completed;
+    if (filter === 'completed') return todo.completed;
+    return true;
+  });
+}
+```
+
+#### Effect로 데이터 변환 (비권장)
+
+```tsx
+function TodoList({ todos, filter }) {
+  const [visibleTodos, setVisibleTodos] = useState([]);
+
+  useEffect(() => {
+    setVisibleTodos(
+      todos.filter(todo => {
+        if (filter === 'active') return !todo.completed;
+        if (filter === 'completed') return todo.completed;
+        return true;
+      }),
+    );
+  }, [todos, filter]);
+}
+```
+
+### 4-3. 사용자 이벤트 처리
+
+#### 이벤트 핸들러에서 처리 (권장)
+
+```tsx
+function ProductPage({ product, addToCart }) {
+  function handleBuyClick() {
+    addToCart(product);
+    showNotification('Added to cart!');
+  }
+}
+```
+
+#### Effect로 처리 (비권장)
+
+```tsx
+function ProductPage({ product, addToCart }) {
+  useEffect(() => {
+    if (isInCart) {
+      showNotification('Added to cart!');
+    }
+  }, [isInCart]);
+}
+```
+
+### 4-4. 계산이 비싼지 판단하는 방법
+
+#### 계산 비용 측정 방법
+
+- 개발자 도구의 성능 탭에서 렌더링 시간 측정
+- 일반적으로 1ms 이상 걸리는 계산은 비용이 많이 드는 것으로 간주
+- 실제 사용자의 기기에서 성능 테스트 필요
+
+#### 비용이 많이 드는 계산의 예시
+
+```tsx
+const visibleTodos = todos.filter(todo => {
+  return todo.text.toLowerCase().includes(searchText.toLowerCase());
+});
+```
+
+#### useMemo로 최적화하기
+
+```tsx
+const visibleTodos = useMemo(() => {
+  return todos.filter(todo => {
+    return todo.text.toLowerCase().includes(searchText.toLowerCase());
+  });
+}, [todos, searchText]);
+```
+
+#### 주의사항
+
+- 모든 계산에 useMemo를 사용하지 않기
+- 실제로 성능 문제가 있는 경우에만 최적화
+- 개발 환경과 프로덕션 환경의 성능 차이 고려
+- 불필요한 최적화는 오히려 성능을 저하시킬 수 있음
+
+### 4-5. 애플리케이션 초기화
+
+#### 컴포넌트 최상위 레벨에서 초기화 (권장)
+
+```tsx
+function App() {
+  const [isDark, setIsDark] = useState(false);
+  const [items, setItems] = useState([]);
+}
+```
+
+#### Effect로 초기화 (비권장)
+
+```tsx
+function App() {
+  const [isDark, setIsDark] = useState(false);
+  const [items, setItems] = useState([]);
+
+  useEffect(() => {
+    setIsDark(localStorage.getItem('darkMode') === 'true');
+    setItems(JSON.parse(localStorage.getItem('items') || '[]'));
+  }, []);
+}
+```
+
+### 4-6. 부모 컴포넌트와의 통신
+
+#### Props로 상태 변경 알리기 (권장)
+
+```tsx
+function Toggle({ onChange }) {
+  const [isOn, setIsOn] = useState(false);
+
+  function updateToggle(nextIsOn) {
+    setIsOn(nextIsOn);
+    onChange(nextIsOn);
+  }
+}
+```
+
+#### Effect로 변경 사항 알리기 (비권장)
+
+```tsx
+function Toggle({ onChange }) {
+  const [isOn, setIsOn] = useState(false);
+
+  useEffect(() => {
+    onChange(isOn);
+  }, [isOn, onChange]);
+}
+```
+
+### 4-7. 주의사항
+
+#### 1. Effect 사용 원칙
+
+- 렌더링을 위한 데이터 변환은 Effect 없이 처리
+- 사용자 이벤트는 이벤트 핸들러에서 처리
+- 외부 시스템과의 동기화에만 Effect 사용
+
+#### 2. Effect 최적화
+
+- 불필요한 Effect 제거로 코드 단순화
+- 성능 향상 및 버그 가능성 감소
+- React의 선언적 프로그래밍 모델 준수
+
+### 4-8. useSyncExternalStore
+
+#### useSyncExternalStore란?
+
+- 외부 store 를 구독할 수 있는 hook
+- 컴포넌트를 외부 데이터 소스와 동기화할 때 사용
+- 서버 렌더링과 클라이언트 하이드레이션 지원
+
+#### 기본 사용법
+
+```tsx
+import { useSyncExternalStore } from 'react';
+
+function TodosApp() {
+  const todos = useSyncExternalStore(todosStore.subscribe, todosStore.getSnapshot);
+}
+```
+
+#### 주요 매개변수
+
+##### subscribe
+
+> store 를 구독하는 함수
+
+- store 가 변경될 때 callback 을 호출
+- 구독 취소 함수를 반환해야 함
+
+##### getSnapshot
+
+> store 의 현재 스냅샷을 반환하는 함수
+
+- 불변 데이터를 반환해야 함
+- store 가 변경되지 않았다면 동일한 값을 반환
+
+##### getServerSnapshot
+
+> (선택): 서버 렌더링을 위한 초기 스냅샷 함수
+
+- 서버와 클라이언트 간 동일한 데이터 보장
+- 서버 렌더링 시 필수
+
+#### 사용 예시
+
+```tsx
+function useOnlineStatus() {
+  const isOnline = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  return isOnline;
+}
+
+function getSnapshot() {
+  return navigator.onLine;
+}
+
+function getServerSnapshot() {
+  return true;
+}
+
+function subscribe(callback) {
+  window.addEventListener('online', callback);
+  window.addEventListener('offline', callback);
+
+  return () => {
+    window.removeEventListener('online', callback);
+    window.removeEventListener('offline', callback);
+  };
+}
+```
+
+#### 주의사항
+
+##### getSnapshot 반환값
+
+- 불변 데이터를 반환해야 함
+- 매번 새로운 객체를 반환하면 무한 루프 발생 가능
+
+###### subscribe 함수
+
+- 컴포넌트 외부에서 정의하거나 useCallback 으로 메모이제이션
+- 리렌더링마다 새로운 함수가 생성되면 불필요한 재구독 발생
+
+##### 서버 렌더링
+
+- `getServerSnapshot` 이 서버와 클라이언트에서 동일한 데이터 반환 보장
+- 브라우저 API 사용 시 서버 렌더링 고려 필요
