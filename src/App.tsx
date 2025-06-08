@@ -1,6 +1,6 @@
-import MyApp1 from './07-escape-hatches/03-synchronizing-with-effects/App';
-import MyApp2 from './07-escape-hatches/04-you-might-not-need-an-effect/App';
-import MyApp3 from './07-escape-hatches/05-lifecycle-of-reactive-effects/App';
+import MyApp1 from './07-escape-hatches/06-separating-events-from-effects/App';
+import MyApp2 from './07-escape-hatches/07-removing-effect-dependencies/App';
+import MyApp3 from './07-escape-hatches/08-reusing-logic-with-custom-hooks/App';
 
 function App() {
   return (

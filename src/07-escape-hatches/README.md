@@ -890,8 +890,8 @@ useEffect(() => {
 
 #### 변경 가능한 값의 종속성
 
-- `ref.current` 와 같은 변경 가능한 값은 의존성으로 사용하지 않음
-- 변경되어도 React 가 변경을 감지하지 못함
+- `ref.current`와 같은 변경 가능한 값은 의존성으로 사용하지 않음
+- 변경되어도 React가 변경을 감지하지 못함
 - 의존성 배열에 포함해도 효과가 없음
 
 #### 올바른 의존성 사용
@@ -926,7 +926,7 @@ function MyComponent() {
 
 ##### 변경 가능한 값 사용 시
 
-- `ref.current` 는 의존성 배열에서 제외
+- `ref.current`는 의존성 배열에서 제외
 - 변경 가능한 값의 변경을 감지하려면 state 사용
 - 불변성을 유지하는 방식으로 데이터 관리
 
@@ -935,3 +935,309 @@ function MyComponent() {
 - React 의 린터는 전역 값이나 변경 가능한 값을 의존성으로 사용하는 것을 감지
 - 린터 경고를 무시하지 말고 올바른 방식으로 수정
 - 의존성 배열은 반응형 값만 포함해야 함
+
+## 6. Effect에서 이벤트 분리하기
+
+### 6-1. 이벤트와 Effect의 차이점
+
+#### 이벤트 핸들러
+
+- 특정 상호 작용에 대한 응답으로 실행
+- 사용자 액션에 반응
+
+#### Effect
+
+- prop 이나 state 변수와 같은 값이 변경되면 재실행
+- 외부 시스템과의 동기화에 사용
+
+### 6-2. 이벤트 핸들러와 Effect 선택 기준
+
+#### 이벤트 핸들러 사용 시기
+
+- 버튼 클릭이나 폼 제출과 같은 명시적인 트리거가 있는 경우
+- 사용자 액션에 직접 반응해야 하는 경우
+
+#### Effect 사용 시기
+
+- 외부 시스템과의 동기화
+- DOM 수동 변경
+
+### 6-3. Effect 이벤트
+
+#### Effect 이벤트란?
+
+- Effect 의 일부 코드가 특정 값의 변경에 반응하지 않도록 함
+- `useEffectEvent` Hook 을 사용하여 구현
+
+#### Effect 이벤트 사용 방법
+
+```tsx
+function ChatRoom({ roomId }) {
+  const [messages, setMessages] = useState([]);
+
+  const onMessage = useEffectEvent(receivedMessage => {
+    setMessages(msgs => [...msgs, receivedMessage]);
+  });
+
+  useEffect(() => {
+    const connection = createConnection(serverUrl, roomId);
+    connection.on('message', onMessage);
+    connection.connect();
+    return () => connection.disconnect();
+  }, [roomId]);
+}
+```
+
+### 6-4. Effect 이벤트의 제한 사항
+
+#### 사용 제한
+
+- Effect 내부에서만 호출 가능
+- 다른 컴포넌트나 Hook 에 전달 불가
+- Effect 의 비반응형 로직에만 사용
+
+#### 주의사항
+
+- Effect 이벤트는 Effect 의 코드 중 비반응형인 부분만 추출
+- Effect 이벤트는 자신을 사용하는 Effect 근처에 위치해야 함
+- 불필요한 의존성 제거를 위해 신중하게 사용
+
+### 6-5. Effect 이벤트 사용 시기
+
+#### Effect 이벤트를 사용해야 하는 경우
+
+- Effect 내부의 일부 코드가 특정 값의 변경에 반응하지 않아야 할 때
+- 불필요한 Effect 재실행을 방지하고 싶을 때
+- Effect 의 의존성 배열을 최적화하고 싶을 때
+
+#### Effect 이벤트를 사용하지 말아야 하는 경우
+
+- Effect 전체가 반응형이어야 하는 경우
+- 이벤트 핸들러로 처리할 수 있는 경우
+- 컴포넌트 간 로직 공유가 필요한 경우
+
+### 6-6. Effect 이벤트 최적화
+
+#### 최적화 방법
+
+- Effect 내부의 비반응형 로직 식별
+- 해당 로직을 Effect 이벤트로 추출
+- 의존성 배열에서 불필요한 의존성 제거
+
+#### 주의사항
+
+- Effect 이벤트는 성능 최적화를 위한 도구
+- 과도한 사용은 코드 복잡성 증가
+- 명확한 사용 사례가 있을 때만 적용
+
+## 7. Effect의 의존성 제거하기
+
+### 7-1. Effect 의존성의 기본 개념
+
+#### 의존성 제거의 필요성
+
+- Effect 가 너무 자주 실행되는 문제 해결
+- 무한 루프 방지
+- 불필요한 동기화 작업 최소화
+
+### 7-2. 의존성 제거 방법
+
+#### 1. Effect 이벤트 사용하기
+
+```tsx
+function ChatRoom({ roomId }) {
+  const [messages, setMessages] = useState([]);
+
+  const onMessage = useEffectEvent(receivedMessage => {
+    setMessages(msgs => [...msgs, receivedMessage]);
+  });
+
+  useEffect(() => {
+    const connection = createConnection(serverUrl, roomId);
+    connection.on('message', onMessage);
+    connection.connect();
+    return () => connection.disconnect();
+  }, [roomId]);
+}
+```
+
+#### 2. 객체 의존성 제거하기
+
+```tsx
+// 비권장
+function ChatRoom({ options }) {
+  useEffect(() => {
+    const connection = createConnection(options);
+    connection.connect();
+    return () => connection.disconnect();
+  }, [options]);
+}
+```
+
+```tsx
+// 권장
+function ChatRoom({ options }) {
+  const { roomId, serverUrl } = options;
+  useEffect(() => {
+    const connection = createConnection({ roomId, serverUrl });
+    connection.connect();
+    return () => connection.disconnect();
+  }, [roomId, serverUrl]);
+}
+```
+
+### 7-3. 의존성 제거 시 주의사항
+
+#### 1. 린터 규칙 준수
+
+- 린터 경고를 무시하지 않고 올바른 방식으로 수정
+- 의존성 배열은 반응형 값만 포함
+- 불필요한 의존성 제거 시 코드의 정확성 보장
+
+### 7-4. 의존성 제거 시기
+
+#### Effect 이벤트를 사용해야 하는 경우
+
+- Effect 내부의 일부 코드가 특정 값의 변경에 반응하지 않아야 할 때
+- 불필요한 Effect 재실행을 방지하고 싶을 때
+- Effect 의존성 배열을 최적화하고 싶을 때
+
+#### Effect 이벤트를 사용하지 말아야 하는 경우
+
+- Effect 전체가 반응형이어야 하는 경우
+- 이벤트 핸들러로 처리할 수 있는 경우
+- 컴포넌트 간 로직 공유가 필요한 경우
+
+### 7-5. 의존성 제거 최적화
+
+#### 최적화 방법
+
+- Effect 내부의 비반응형 로직 식별
+- 해당 로직을 Effect 이벤트로 추출
+- 의존성 배열에서 불필요한 의존성 제거
+
+#### 주의사항
+
+- Effect 이벤트는 성능 최적화를 위한 도구
+- 과도한 사용은 코드 복잡성 증가
+- 명확한 사용 사례가 있을 때만 적용
+
+## 8. 커스텀 Hook으로 로직 재사용하기
+
+### 8-1. 커스텀 Hook의 기본 개념
+
+#### 커스텀 Hook이란?
+
+- React 의 내장 Hook을 조합하여 만든 재사용 가능한 로직
+- 컴포넌트 간 로직을 공유하기 위한 방법
+- `use` 로 시작하는 이름을 가진 함수
+
+### 8-2. 커스텀 Hook 작성 방법
+
+#### 1. Hook 이름 규칙
+
+```tsx
+function useOnlineStatus() {
+  const [isOnline, setIsOnline] = useState(true);
+  // ...
+}
+```
+
+#### 2. Hook 구현 방법
+
+```tsx
+function useWindowSize() {
+  const [size, setSize] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  });
+
+  useEffect(() => {
+    function handleResize() {
+      setSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    }
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return size;
+}
+```
+
+### 8-3. 커스텀 Hook 사용 시기
+
+#### Hook을 사용해야 하는 경우
+
+- 여러 컴포넌트에서 동일한 로직을 사용할 때
+- 복잡한 로직을 컴포넌트에서 분리하고 싶을 때
+- 상태 관리 로직을 재사용하고 싶을 때
+
+#### Hook 사용 원칙
+
+- Hook은 최상위 레벨에서만 호출
+- React 함수 컴포넌트나 다른 Hook에서만 호출
+- 조건문, 반복문, 중첩된 함수 내에서 호출하지 않음
+
+### 8-4. 커스텀 Hook의 특징
+
+#### 1. 상태 공유
+
+- Hook 은 상태 저장 로직만 공유
+- 각 컴포넌트는 Hook 의 상태를 독립적으로 가짐
+- 컴포넌트 간 상태는 공유되지 않음
+
+#### 2. 반응형 값 전달
+
+- Hook 간에 반응형 값 전달
+- 전달된 값은 항상 최신 상태 유지
+- 의존성 배열을 통한 값 변경 감지
+
+### 8-5. 커스텀 Hook 사용 예시
+
+#### 온라인 상태 확인 Hook
+
+```tsx
+function useOnlineStatus() {
+  const [isOnline, setIsOnline] = useState(true);
+
+  useEffect(() => {
+    function handleOnline() {
+      setIsOnline(true);
+    }
+    function handleOffline() {
+      setIsOnline(false);
+    }
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  return isOnline;
+}
+```
+
+### 8-6. 주의사항
+
+#### 1. Hook 이름 규칙
+
+- `use` 로 시작하는 이름 사용
+
+#### 2. Hook의 순수성
+
+- Hook 코드는 컴포넌트처럼 순수해야 함
+- 렌더링 중에 예측 가능한 결과를 반환해야 함
+- 부수 효과는 useEffect 내부에서 처리
+
+#### 3. 이벤트 핸들러
+
+- Hook 에서 반환하는 이벤트 핸들러는 Effect 로 감싸야 함
+- 불필요한 재생성 방지
+- 의존성 배열 관리 필요
